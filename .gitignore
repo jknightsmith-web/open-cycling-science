@@ -1,0 +1,23 @@
+# Rider data never enters version control (spec 8.1, acceptance 17)
+fixtures/real/
+*.fit
+*.FIT
+*.tcx
+*.TCX
+!fixtures/synthetic/*.fit
+!fixtures/synthetic/*.tcx
+*.db
+*.db-wal
+*.db-shm
+raw_files/
+data/
+vault/
+
+# Tooling
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.hypothesis/
+node_modules/
+dist/
