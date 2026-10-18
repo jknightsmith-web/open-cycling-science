@@ -56,6 +56,8 @@ class RawActivity:
     utc_offset_s: Optional[float] = None
     simulated_channels: frozenset[str] = frozenset()
     sensor_identity: dict[str, dict] = field(default_factory=dict)
+    original_fields: list[dict] = field(default_factory=list)   # per record, as decoded
+    metadata: dict = field(default_factory=dict)                 # platform, sport, devices
 
 
 @dataclass(frozen=True)

@@ -11,8 +11,10 @@ Every dependency is recorded here, with its licence, before it is added (archite
 | Mako | 1.4.3 | MIT | Transitive, alembic templates | WP2 |
 | MarkupSafe | 3.0.4 | BSD-3-Clause | Transitive, Mako | WP2 |
 | typing_extensions | 4.16.0 | PSF-2.0 | Transitive, SQLAlchemy and alembic | WP2 |
+| fitdecode | 0.11.0 | MIT | FIT decoding (decision D8). No runtime dependencies. Embedded FIT profile from Garmin SDK 21.171 | WP3 |
+| defusedxml | 0.7.1 | PSF-2.0 (PSFL) | Safe TCX XML parsing (no entity expansion or external entities) | WP3 |
 
-Planned, not yet added: `fitdecode` 0.11.0 (MIT, verified 2026-10-17, decision D8) and `defusedxml` (licence to check) in WP3; FastAPI and Pydantic in WP8.
+Planned, not yet added: FastAPI and Pydantic in WP8.
 
 ## Development only (not distributed)
 
