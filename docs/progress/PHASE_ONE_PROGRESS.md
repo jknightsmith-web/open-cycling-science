@@ -63,7 +63,7 @@ Measured in the Linux container (4 core Xeon 2.1 GHz, headless Chromium 141). No
 | UI-12 | 1,000 activities: Library, Overview and Activity load without fetching all samples | **Pass** (Linux) | `perf.spec.ts`: largest sample request 60 rows; charts use the bounded envelope |
 | UI-13 | No metric computed in the frontend | **Pass** | `src/noMetricComputation.test.ts`, with a planted case proving the scan is not vacuous |
 | UI-14 | No training load, readiness, fitness, fatigue, FTP, zone or kcal value | **Pass** | `UI-14` test over every screen except the register text; register lists M001 to M004 only |
-| UI-15 | Frontend tests offline in CI and locally | **Pass** locally; CI after push | |
+| UI-15 | Frontend tests offline in CI and locally | **Pass** | Locally, and GitHub Actions run 40085444723 (backend, Vitest, types check, build, Playwright) |
 | UI-16 | Library with 1,000 activities in at most 2 s | **Pass** (Linux): median 145 ms, max 168 ms over 5 cold loads | macOS pending |
 | UI-17 | Activity screen, 3 h at 1 Hz, in at most 2 s | **Pass** (Linux): median 319 ms, max 394 ms over 5 cold loads | macOS pending |
 | UI-18 | Heap and chart responsiveness recorded | **Recorded** (Linux): JS heap after GC 3.0 MB Library, 2.8 MB Overview, 2.9 MB Activity; zoom redraw 4 to 17 ms (includes waiting for the next frame); channel switch 41 to 180 ms including the API request | macOS pending |
