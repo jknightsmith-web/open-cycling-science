@@ -22,7 +22,7 @@ _BASE = {ENUM: ("B", 0xFF), SINT8: ("b", 0x7F), UINT8: ("B", 0xFF),
 # message number -> {field name: (field number, base type, scale)}
 MESSAGES = {
     "file_id": (0, {"type": (0, ENUM, 1), "manufacturer": (1, UINT16, 1), "product": (2, UINT16, 1),
-                    "time_created": (4, UINT32, 1)}),
+                    "serial_number": (3, UINT32, 1), "time_created": (4, UINT32, 1)}),
     "record": (20, {"timestamp": (253, UINT32, 1), "heart_rate": (3, UINT8, 1), "cadence": (4, UINT8, 1),
                     "power": (7, UINT16, 1), "speed": (6, UINT16, 1000), "distance": (5, UINT32, 100),
                     "temperature": (13, SINT8, 1)}),
@@ -115,7 +115,7 @@ class FitWriter:
 
 def activity_file(records: list[dict], events: list[tuple[float, int]] = (), session: Optional[dict] = None,
                   devices: list[dict] = (), local_offset_s: Optional[int] = None,
-                  compress_after_first: bool = False) -> bytes:
+                  compress_after_first: bool = False, file_id: Optional[dict] = None) -> bytes:
     """Build an activity FIT file.
 
     records: dicts with unix 't' plus any of power, heart_rate, cadence, speed,
@@ -124,7 +124,7 @@ def activity_file(records: list[dict], events: list[tuple[float, int]] = (), ses
     """
     w = FitWriter()
     t0 = fit_time(records[0]["t"]) if records else 0
-    w.write("file_id", type=4, manufacturer=255, product=1, time_created=t0)
+    w.write("file_id", **{"type": 4, "manufacturer": 255, "product": 1, "time_created": t0, **(file_id or {})})
     for d in devices:
         w.write("device_info", timestamp=t0, **d)
     timeline = [("r", r["t"], r) for r in records] + [("e", t, et) for t, et in events]

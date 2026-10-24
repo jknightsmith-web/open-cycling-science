@@ -1,0 +1,43 @@
+# Register entry contract, spec 6.2. Normative definition: docs/spec/01_SPECIFICATION.md section 7, M004.
+metric_id: M004
+version: "1.0"
+display_name: Highest observed mean power over duration T
+classification: DERIVED
+evidence_label: IDENTITY
+units: W
+equation: |
+  MMP(T) = max over a of (1/T) * integral from a to a+T of P(t) dt
+  over windows lying entirely inside one contiguous run of observed power within one timer running segment
+variable_definitions:
+  T: window duration (s)
+  a: window start (UTC seconds)
+  P(t): observed power as a step function under the sample duration rule
+outputs:
+  value: W for each T
+  window_start_s: start of the best window
+  recording_interval_s: nominal recording interval of the source file
+  source: activity and source file hash
+source_refs:
+  - id: definition
+    role: Maximal mean power (Annex A F03)
+  - id: R11
+    role: Use and interpretation of power duration data
+  - id: R12
+    role: Record power profile (DOI unconfirmed, status M)
+population_scope: Any rider; history values are only as good as the efforts recorded
+input_requirements: Contiguous observed power of at least T seconds
+data_quality_rules: No window crosses a gap, an invalid or missing sample or a timer stop; unavailable with state insufficient_coverage when no contiguous run is long enough
+algorithm: Prefix energy with two monotone pointers, O(n) per T (architecture 6, backend/metrics/m004_mmp.py); the oracle's O(n^2) scan is the reference
+parameter_set:
+  durations_s: [5, 60, 300, 1200, 3600]
+assumptions:
+  - A1 and step function, as M002.
+known_limitations:
+  - Shows what was done, not capability (R11). Labelled highest observed, not maximal capability.
+  - The strict no bridging rule means one dropped sample breaks long windows; the effect on real files is still to be measured.
+  - Short T is sensitive to sample alignment and recording rate; meters differ in sprint response (R06).
+validation_protocol: Oracle agreement plus hypothesis property tests; real file gap frequency report
+software_test_status: Production code passes the spec 7 tests and agrees with the reference oracle within 1e-9 relative on fixtures and 300 generated activities
+scientific_validation_status: IDENTITY; real file check pending; R12 DOI unconfirmed
+uncertainty_statement: Arithmetic exact; device and alignment uncertainty not quantified
+last_reviewed: "2026-10-24"

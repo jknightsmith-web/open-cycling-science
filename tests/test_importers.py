@@ -151,3 +151,13 @@ def test_zip_bomb_ratio_rejected():
 def test_unknown_content_rejected_regardless_of_name():
     with pytest.raises(ImportFailure):
         sniff(b"MZ\x90\x00 executable pretending to be ride.fit")
+
+
+def test_recording_identity_from_fit_file_id_and_tcx_id():
+    raw = fit.parse(activity_file(steady(3), file_id={"manufacturer": 1, "product": 4536, "serial_number": 42}))
+    assert raw.metadata["original_activity_id"].startswith("fit:garmin:")
+    assert raw.metadata["device"]["serial_number"] == 42
+    assert fit.parse(activity_file(steady(3))).metadata["original_activity_id"] is None   # no serial: no identity
+    pts = "".join(tp(i, 200) for i in range(3))
+    assert tcx.parse(TCX.format(total=3, points=pts).encode()).metadata["original_activity_id"] == \
+        "tcx:Synthetic:2025-10-09T08:53:20Z"

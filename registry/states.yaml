@@ -1,0 +1,18 @@
+# Value and validity states shown in the science catalogue (spec 5.2, 6.1, architecture 5).
+classes:
+  OBSERVED: Directly reported by a device. Shown with device identity and the device measurement error from the register.
+  DERIVED: Deterministic transform of observations by an equation that is a mathematical identity given its input definitions. Shown with equation and coverage.
+  MODELLED: Parameters estimated under assumptions that may not hold. Shown with fit quality, protocol status and validation status; never called measured. None in Phase One.
+  EXPERIMENTAL: Hypothesis not approved for decision support. Hidden by default. None in Phase One.
+validity:
+  observed: The sensor reported a value. Zero is an observed value (for example 0 W while coasting).
+  missing: The field was absent from the record, or no record covers this time. Never shown or counted as zero.
+  invalid: The field was present but unusable, for example a FIT invalid sentinel, a value outside the physical range (power 0 to 3000 W, heart rate 20 to 250 bpm, cadence 0 to 250 rpm) or a repeated timestamp. Heart rate 0 is invalid.
+  suspect_zero: A flag, not a state. 0 W for at least 3 s while cadence is above 0. The value stays observed and is not altered or excluded.
+value_states:
+  valid: Computed, and the metric's data quality rules pass.
+  lower_bound: Computed from incomplete data and known to be at most the true value (M003 below 0.95 coverage).
+  insufficient_coverage: Not shown, because the input does not meet the metric's coverage rule.
+  no_power: Not shown, because no observed power exists for the activity or ride.
+  not_applicable: Not shown, because the metric does not apply (for example no samples).
+  unconfirmed_duplicates_included: An aggregate that includes possible duplicates the rider has not confirmed or rejected; the potential overcount is shown beside it.

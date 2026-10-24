@@ -1,0 +1,44 @@
+# Register entry contract, spec 6.2. Normative definition: docs/spec/01_SPECIFICATION.md section 7, M003 (decision D1).
+metric_id: M003
+version: "1.0"
+display_name: Recorded mechanical work
+classification: DERIVED
+evidence_label: IDENTITY
+units: kJ
+equation: |
+  W_kJ = sum(P_i * dt_i) / 1000
+  over the same intervals as M002
+variable_definitions:
+  P_i: observed power of interval i (W)
+  dt_i: duration of interval i (s)
+outputs:
+  value: kJ
+  coverage: fraction of timer time with observed power
+  observed_power_s: s
+  eligible_s: s
+source_refs:
+  - id: definition
+    role: 1 W = 1 J/s (Annex A F02)
+  - id: R06
+    role: Power meter validity and reliability; agreement assessment method
+  - id: R09
+    role: Wattbike agreement with SRM on earlier models (agreement, not accuracy)
+  - id: R10
+    role: AtomX against a calibrated reference (accuracy); different model from the Atom
+population_scope: Any ride with measured power
+input_requirements: Measured power
+data_quality_rules: Reported at any coverage above 0 with coverage alongside; labelled lower_bound below 0.95 coverage (D1)
+algorithm: Single pass sum (backend/metrics/m002_m003_power.py)
+parameter_set:
+  lower_bound_label_below: 0.95
+assumptions:
+  - Mechanical power is non negative, so recorded work is at most the true work during timer time.
+  - A1 and step function, as M002.
+known_limitations:
+  - Mechanical work, not metabolic energy. Kilojoules are not converted to kcal; that needs gross efficiency, which varies (Annex A F06) and is a separate MODELLED candidate (M014), not Phase One.
+  - Device accuracy limits as M002.
+validation_protocol: As M002
+software_test_status: Production code passes the spec 7 tests and agrees with the reference oracle (updated to D1) on fixtures and 300 generated activities
+scientific_validation_status: IDENTITY; real file check pending
+uncertainty_statement: Arithmetic exact; measurement uncertainty is the device's and is not quantified per ride
+last_reviewed: "2026-10-24"

@@ -6,12 +6,15 @@ means absent.
 """
 from __future__ import annotations
 
-from sqlalchemy import (Boolean, CheckConstraint, Column, Float, ForeignKey, Integer, MetaData,
+from sqlalchemy import (Boolean, CheckConstraint, Column, Float, ForeignKey, Index, Integer, MetaData,
                         String, Table, Text, UniqueConstraint)
 
 metadata = MetaData()
 
 VALIDITY = ("observed", "missing", "invalid")
+SELECTABLE_FIELDS = ("timer", "power", "heart_rate", "cadence", "speed", "distance", "temperature")  # spec 5.8
+GROUP_STATUSES = ("proposed", "confirmed", "rejected")
+MEMBERSHIPS = ("member", "pending", "excluded")
 VALUE_STATES = ("valid", "lower_bound", "insufficient_coverage", "no_power", "not_applicable",
                 "unconfirmed_duplicates_included")
 CHANNEL_COLUMNS = {  # channel -> (value column, validity column)
@@ -26,6 +29,10 @@ CHANNEL_COLUMNS = {  # channel -> (value column, validity column)
 
 def _fk(target: str) -> ForeignKey:
     return ForeignKey(target, ondelete="CASCADE")
+
+
+def _in(column: str, values: tuple[str, ...], name: str) -> CheckConstraint:
+    return CheckConstraint(f"{column} IN (" + ", ".join(f"'{v}'" for v in values) + ")", name=name)
 
 
 def _validity_checks() -> list[CheckConstraint]:
@@ -70,6 +77,7 @@ activities = Table(
     Column("nominal_interval_s", Float),
     Column("recording_stats_json", Text),
     Column("recording_flags_json", Text),
+    Index("ix_activities_start_utc", "start_utc"),
 )
 
 activity_channels = Table(
@@ -126,10 +134,28 @@ duplicate_groups = Table(
     CheckConstraint("status IN ('proposed', 'confirmed', 'rejected')", name="ck_group_status"),
 )
 
+# membership: `member` belongs to the group; `pending` was proposed to join an
+# already confirmed group and counts as its own ride until the rider accepts it;
+# `excluded` was left out by the rider and is not proposed with this group again.
 duplicate_group_members = Table(
     "duplicate_group_members", metadata,
     Column("group_id", Integer, _fk("duplicate_groups.id"), primary_key=True),
     Column("activity_id", Integer, _fk("activities.id"), primary_key=True),
+    Column("membership", String(16), nullable=False, server_default="member"),
+    Column("added_at_utc", Float),
+    _in("membership", MEMBERSHIPS, "ck_membership"),
+)
+
+# Every rider decision on a group, so a group's history is reconstructable (P12, 5.7).
+duplicate_group_events = Table(
+    "duplicate_group_events", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("group_id", Integer, _fk("duplicate_groups.id"), nullable=False, index=True),
+    Column("action", String(16), nullable=False),
+    Column("activity_id", Integer, _fk("activities.id")),
+    Column("at_utc", Float, nullable=False),
+    Column("actor", String(16), nullable=False),
+    Column("detail_json", Text),
 )
 
 rides = Table(
@@ -139,6 +165,10 @@ rides = Table(
     Column("activity_id", Integer, _fk("activities.id"), unique=True),
     Column("group_id", Integer, _fk("duplicate_groups.id"), unique=True),
     Column("needs_review", Boolean, nullable=False, default=False),
+    # A single ride is inactive while its activity is a member of a confirmed group;
+    # a group ride is active only while its group is confirmed. Rows are kept so ride ids are stable.
+    Column("active", Boolean, nullable=False, server_default="1"),
+    Column("selection_revision", Integer, nullable=False, server_default="0"),
     CheckConstraint("(kind = 'single' AND activity_id IS NOT NULL AND group_id IS NULL) OR "
                     "(kind = 'group' AND group_id IS NOT NULL AND activity_id IS NULL)", name="ck_ride_kind"),
 )
@@ -150,6 +180,20 @@ ride_channel_sources = Table(
     Column("activity_id", Integer, ForeignKey("activities.id", ondelete="SET NULL")),
     Column("selected_at_utc", Float, nullable=False),
     Column("selection_revision", Integer, nullable=False),
+    Column("selected_by", String(16), nullable=False, server_default="rider"),
+    _in("channel", SELECTABLE_FIELDS, "ck_selectable_field"),
+)
+
+# Every selection ever made for a ride (spec 5.8: the selection, who made it and when).
+ride_selection_history = Table(
+    "ride_selection_history", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("ride_id", Integer, _fk("rides.id"), nullable=False, index=True),
+    Column("selection_revision", Integer, nullable=False),
+    Column("channel", String(16), nullable=False),
+    Column("activity_id", Integer, _fk("activities.id")),
+    Column("selected_at_utc", Float, nullable=False),
+    Column("selected_by", String(16), nullable=False),
 )
 
 channel_preferences = Table(
@@ -183,6 +227,7 @@ metric_runs = Table(
     Column("calculated_at_utc", Float, nullable=False),
     Column("quality_json", Text),
     Column("computation_version", String(32), nullable=False),
+    Column("provenance_json", Text),   # source sha256s, activity ids, selection revision
     CheckConstraint("scope_type IN ('activity', 'ride', 'aggregate')", name="ck_scope_type"),
     UniqueConstraint("metric_id", "metric_version", "scope_type", "scope_id", "parameter_json",
                      "input_revision", "computation_version", name="uq_run_identity"),

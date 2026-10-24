@@ -1,5 +1,6 @@
 """WP2: data root, vault (acceptance 5) and schema constraints that enforce P6."""
 import os
+import re
 import sqlite3
 import stat
 from pathlib import Path
@@ -93,3 +94,21 @@ def test_schema_keeps_zero_missing_and_invalid_distinct(db):
         con.execute("INSERT INTO metric_values (run_id, numeric_value, state, units) VALUES (1, 0.0, 'insufficient_coverage', 'W')")
     con.execute("DELETE FROM activities WHERE id = 1")
     assert con.execute("SELECT COUNT(*) FROM samples").fetchone()[0] == 0   # cascade (spec 8.4)
+
+
+def test_migrations_match_the_schema_definition(db, tmp_path):
+    """Upgrading through every migration yields the same tables, columns and CHECK constraints as schema.py."""
+    from sqlalchemy import create_engine
+    from backend.storage.schema import metadata
+    fresh = tmp_path / "fresh.db"
+    metadata.create_all(create_engine(f"sqlite:///{fresh}"))
+
+    def shape(path):
+        con = sqlite3.connect(path)
+        out = {}
+        for name, sql in con.execute("SELECT name, sql FROM sqlite_master WHERE type='table' AND name != 'alembic_version'"):
+            cols = sorted(r[1] for r in con.execute(f"PRAGMA table_info({name})"))
+            checks = sorted(re.findall(r"CONSTRAINT (\w+) CHECK", sql))
+            out[name] = (cols, checks)
+        return out
+    assert shape(db) == shape(fresh)

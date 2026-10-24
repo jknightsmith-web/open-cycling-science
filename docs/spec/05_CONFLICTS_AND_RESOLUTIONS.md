@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | 05 Conflicts and resolutions |
-| Version | 1.0 (approved for Phase One by Jimmy 2026-10-17) |
+| Version | 1.0 (approved for Phase One by Jimmy 2026-10-17); C28 to C30 added 2026-10-24 (amendment 1) |
 | Date | 2026-10-17 |
 | Inputs compared | Starter pack (`README`, `CLAUDE.md`, `docs/01` to `07`, `prompts/01`, `reference/metric_oracle.py`); thread "Map the existing platform files" (`inventory/PLATFORM_INVENTORY.md`); thread "Draft a data ownership design" (`design/08_DATA_OWNERSHIP.md`); thread "Build a cited formula register" (`formula-register/FORMULA_REGISTER.md`) |
 
@@ -55,6 +55,9 @@ Additional requirements from the same approval, written into the spec: no device
 | C25 | Per channel selection could let ride power metrics mix one file's timer with another file's power, which needs clock alignment (U8) | Power metrics at ride level use the selected power file with its own timer; the selected timer source sets only reported duration | Spec 5.8 |
 | C26 | Deleting an activity that sits in a confirmed group would leave dangling channel selections | Member removed from group, its selections become unselected, ride flagged for review, other members untouched | Spec 8.4 |
 | C27 | Gate 0 required real files, yet most Phase One work needs only synthetic data | Real files moved to the WP3 verification step and Gate 1 | Roadmap |
+| C28 | Spec 5.7 proposed duplicates on timer overlap only; Jimmy's WP6 brief (2026-10-24) asks for timestamps, duration, activity IDs and device information | Overlap rule kept; same recording identity added as a second criterion; start offset, durations and device identity stored as evidence for the rider (rule 1.1, amendment 1) | Spec 5.7 |
+| C29 | Spec 5.7 did not say what happens when a recording of an already confirmed ride arrives later | Joins the group as pending; counts separately and in the overcount until accepted or excluded; the confirmed ride is unchanged meanwhile (amendment 1) | Spec 5.7 |
+| C30 | Jimmy's brief: confirmed duplicates count as one ride "unless the user explicitly overrides this"; no override was specified | Reopen (and optionally reject) is the override; no separate counting flag, so one mechanism decides counting | Spec 5.7 |
 
 ## 3. Evidence questions
 

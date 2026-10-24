@@ -1,0 +1,45 @@
+# Register entry contract, spec 6.2. Normative definition: docs/spec/01_SPECIFICATION.md section 7, M001.
+# Evidence record: docs/spec/02_RESEARCH_REGISTER.md section 2, M001.
+metric_id: M001
+version: "1.0"
+display_name: Timer duration, elapsed duration and sample coverage
+classification: DERIVED
+evidence_label: IDENTITY
+units: s
+equation: |
+  elapsed_s = t_end - t_start
+  timer_s = sum of the lengths of the timer running segments
+  observed_s = sum of the lengths of sample intervals inside timer running segments (any channel)
+variable_definitions:
+  t_start: timestamp of the first sample (UTC seconds)
+  t_end: end of the last sample interval under the sample duration rule (spec 5.3)
+  timer running segments: from FIT timer events, or assumed continuous from first to last sample when a file has none (spec 5.4, D3)
+  sample interval: half open [t_i, t_i+1) when the next sample is within 1.5 x the nominal interval, else [t_i, t_i + nominal) followed by a gap (spec 5.3, D2)
+outputs:
+  timer_s: s, the reported value
+  elapsed_s: s
+  observed_s: s
+  timer_source: device_events or assumed_continuous
+  device_timer_s: s, OBSERVED value reported by the device, shown separately and never reconciled
+source_refs:
+  - id: D01
+    role: FIT timer event semantics
+  - id: D07
+    role: Recording modes (Smart and Every Second)
+population_scope: Any activity file
+input_requirements: Timestamped records; timer events if present
+data_quality_rules: Strictly increasing timestamps after deduplication; timer_source recorded; a difference from device_timer_s above max(2 s, 1%) is flagged device_timer_mismatch
+algorithm: Interval sums over the spec 5.3 and 5.4 structures (backend/metrics/m001_duration.py)
+parameter_set:
+  gap_tolerance_factor: 1.5
+assumptions:
+  - The device clock is monotonic within a file.
+  - FIT timer events are complete when present.
+known_limitations:
+  - Without timer events (every TCX file) pauses are invisible and timer_s equals elapsed_s.
+  - Not moving time. Pauses are never inferred from low power, zero speed or gaps.
+validation_protocol: Synthetic tests (spec 7, M001); on real files compare with device_timer_s and flag a difference above max(2 s, 1%)
+software_test_status: Production code passes the spec 7 tests and agrees with the reference oracle on fixtures and 300 generated activities (tests/test_metrics.py, tests/test_oracle_agreement.py)
+scientific_validation_status: IDENTITY; real file check pending (WP3 verification needs real Fenix 8, Wattbike Hub and MyWhoosh files)
+uncertainty_statement: Exact given its inputs; the error source is file content, not arithmetic. Not quantified.
+last_reviewed: "2026-10-24"

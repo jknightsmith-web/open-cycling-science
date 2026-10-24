@@ -80,6 +80,8 @@ def parse(data: bytes) -> RawActivity:
     if not records:
         raise ImportFailure("no_records", "TCX has no timestamped trackpoints")
     creator = activity.findtext(f"{TCD}Creator/{TCD}Name")
+    activity_id = (activity.findtext(f"{TCD}Id") or "").strip() or None
+    unit_id = activity.findtext(f"{TCD}Creator/{TCD}UnitId")
     return RawActivity(
         source_format="tcx",
         records=records,
@@ -87,5 +89,7 @@ def parse(data: bytes) -> RawActivity:
         device_timer_s=sum(lap_times) if lap_times else None,
         original_fields=originals,
         metadata={"source_platform": creator, "sport": activity.get("Sport"),
+                  "original_activity_id": f"tcx:{creator}:{activity_id}" if activity_id else None,
+                  "device": {"name": creator, "unit_id": unit_id},
                   "untimed_trackpoints": untimed, "parser_version": PARSER_VERSION},
     )

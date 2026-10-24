@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | 01 Specification (authoritative) |
-| Version | 1.0 PHASE ONE FROZEN (approved by Jimmy 2026-10-17) |
+| Version | 1.0 PHASE ONE FROZEN (approved by Jimmy 2026-10-17); amendment 1 (2026-10-24): duplicate rules in 5.7 from Jimmy's WP6 brief, logged as C28 to C30 |
 | Date | 2026-10-17 |
 | Status | Frozen for Phase One. Decisions D1 to D8 (section 10) and the conflicts register (`05`) approved by Jimmy 2026-10-17. Any change, including scope additions, needs Jimmy's approval through change control (roadmap) and a version increment. |
 | Companion documents | `02_RESEARCH_REGISTER.md`, `03_TECHNICAL_ARCHITECTURE.md`, `04_DEVELOPMENT_ROADMAP.md`, `05_CONFLICTS_AND_RESOLUTIONS.md` |
@@ -131,7 +131,10 @@ Pauses MUST NOT be inferred from low power, zero speed or gaps.
 
 - Byte duplicate: identical SHA256. The second import creates no new activity and reports the existing one. The bytes are already preserved, so nothing is lost.
 - Possible duplicate: different bytes, timer running spans overlapping by at least 80% of the shorter activity (engineering parameter, stored). The app groups them as a *proposed* duplicate group automatically.
+- Also a possible duplicate (amendment 1, 2026-10-24): different bytes with the same recording identity (FIT `file_id` manufacturer, product, serial number and creation time; TCX creator and activity `Id`), which a re-export keeps even when the bytes change. The evidence for each pair (overlap, start offset, timer durations, recording identity, device identity) is stored with the group. Rule version 1.1.
+- A recording that matches a member of an already confirmed group joins it as *pending* (amendment 1). It counts as its own ride, and in the shown overcount, until the rider accepts it (with a new channel selection) or excludes it. At confirmation the rider may also exclude members; excluded members stay separate rides.
 - A proposed group changes nothing until the rider acts. The rider can **confirm** it (the members become one ride, section 5.8) or **reject** it (the members stay separate rides and are not proposed again as that group).
+- Once confirmed, the group counts as one ride in aggregates. The rider overrides this by reopening the group (it returns to proposed) and, if wanted, rejecting it (amendment 1).
 - Until confirmed, every member counts in aggregates as its own ride. The Overview shows the number of unconfirmed groups and the duration and work that would be excluded if they were confirmed, so the possible overcount is visible.
 - Confirming, rejecting or changing a group never deletes or alters a recording, is reversible, and marks dependent aggregates stale for recomputation.
 - Activity level values are always computed for every member.

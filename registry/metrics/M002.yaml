@@ -1,0 +1,46 @@
+# Register entry contract, spec 6.2. Normative definition: docs/spec/01_SPECIFICATION.md section 7, M002.
+metric_id: M002
+version: "1.0"
+display_name: Recorded mean power
+classification: DERIVED
+evidence_label: IDENTITY
+units: W
+equation: |
+  P_mean = sum(P_i * dt_i) / sum(dt_i)
+  over intervals with observed power inside timer running segments
+variable_definitions:
+  P_i: observed power of interval i (W); measured zero is included, missing and invalid are excluded
+  dt_i: duration of interval i (s) under the sample duration rule (spec 5.3)
+  coverage: observed power seconds / timer seconds (spec 5.5)
+outputs:
+  value: W
+  coverage: fraction of timer time with observed power
+  observed_power_s: s
+  eligible_s: s
+source_refs:
+  - id: definition
+    role: Time averaged power (Annex A F01)
+  - id: R06
+    role: Power meter validity and reliability; agreement assessment method
+  - id: R09
+    role: Wattbike agreement with SRM on earlier models (agreement, not accuracy)
+  - id: R10
+    role: AtomX against a calibrated reference (accuracy); different model from the Atom
+population_scope: Any ride with measured power
+input_requirements: Measured power. Power derived from speed is never an input (Annex A F32)
+data_quality_rules: Power coverage of at least 0.95 of timer time, otherwise unavailable with state insufficient_coverage
+algorithm: Single pass sum (backend/metrics/m002_m003_power.py)
+parameter_set:
+  min_coverage: 0.95
+assumptions:
+  - A1, a record's value applies forward from its timestamp (unverified per device, U4).
+  - Power is a step function within each interval.
+known_limitations:
+  - Accuracy is bounded by the power meter, about 2 to 3% at 150 to 350 W for common meters, with condition dependent errors (R06).
+  - Values from different meters are not interchangeable without an agreement assessment on the rider's own rides (spec 6.3).
+  - Missing data may be non random (for example dropouts during sprints), so the mean over observed time can be biased even above 95% coverage.
+validation_protocol: Synthetic oracle agreement; cross source agreement assessment (bias, limits of agreement) on one ride recorded by Fenix 8, MyWhoosh and Hub. That is not an accuracy validation, because no calibrated reference is available (spec 6.3)
+software_test_status: Production code passes the spec 7 tests and agrees with the reference oracle on fixtures and 300 generated activities
+scientific_validation_status: IDENTITY; real file check pending
+uncertainty_statement: Arithmetic exact; measurement uncertainty is the device's and is not quantified per ride
+last_reviewed: "2026-10-24"

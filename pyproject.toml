@@ -9,12 +9,16 @@ dependencies = [
     "alembic>=1.13,<2",
     "fitdecode==0.11.0",
     "defusedxml>=0.7,<1",
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.30,<1",
+    "pyyaml>=6,<7",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8",
     "hypothesis>=6",
+    "httpx>=0.27,<1",
 ]
 
 [build-system]

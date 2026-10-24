@@ -1,0 +1,34 @@
+# Sources cited by registry entries. Copied from docs/spec/02_RESEARCH_REGISTER.md section 5.
+# status: V confirmed against a publisher or index record; P from the starter pack, not rechecked; M DOI not confirmed.
+definition:
+  citation: Mathematical definition; no external source needed
+  doi: null
+  status: V
+R06:
+  citation: Bouillod A, Soto-Romero G, Grappe F, Bertucci W, Brunet E, Cassirame J (2022). Caveats and recommendations to assess the validity and reliability of cycling power meters, a systematic scoping review. Sensors 22(1):386
+  doi: 10.3390/s22010386
+  status: V
+R09:
+  citation: Hopker J, Myers S, Jobson SA, Bruce W, Passfield L (2010). Validity and reliability of the Wattbike cycle ergometer. Int J Sports Med 31(10):731-736. Earlier Wattbike models, not the Atom; compared against an SRM, so an agreement study
+  doi: 10.1055/s-0030-1261968
+  status: V
+R10:
+  citation: Shiraki S, Yamagishi T, Yamashita D (2025). Conversion table and equations for power estimation in Wattbike AtomX. Sports Engineering 28:18. One AtomX read -6.4% (-35.6 W mean) against a Lode calibrator; the AtomX is a different model from the Atom
+  doi: 10.1007/s12283-025-00501-y
+  status: V
+R11:
+  citation: Leo P, Spragg J, Podlogar T, Lawley JS, Mujika I (2022). Power profiling and the power duration relationship in cycling, a narrative review. Eur J Appl Physiol 122(2):301-316
+  doi: 10.1007/s00421-021-04833-y
+  status: V
+R12:
+  citation: Pinot J, Grappe F (2011). The record power profile to assess performance in elite cyclists. Int J Sports Med 32(11):839-844
+  doi: 10.1055/s-0031-1279773
+  status: M
+D01:
+  citation: Garmin FIT SDK and protocol, developer.garmin.com/fit (field definitions, events, sentinels)
+  doi: null
+  status: P
+D07:
+  citation: Garmin description of Smart and Every Second recording, quoted at help.trainingpeaks.com/hc/en-us/articles/204070064
+  doi: null
+  status: V (secondary quote)

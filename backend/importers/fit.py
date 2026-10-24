@@ -115,6 +115,11 @@ def parse(data: bytes) -> RawActivity:
         cands = [d for d in devices if d.get("device_type") in types or d.get("antplus_device_type") in types]
         sensor_identity[channel] = {"match": cands[0] if len(cands) == 1 else None, "candidates": cands}
 
+    # The recording's own identity: a re-export of one recording keeps it even when bytes differ.
+    ident = None
+    if file_id.get("serial_number") is not None and file_id.get("time_created") is not None:
+        ident = ":".join(str(file_id.get(k)) for k in ("manufacturer", "product", "serial_number", "time_created"))
+        ident = f"fit:{ident}"
     return RawActivity(
         source_format="fit",
         records=records,
@@ -126,6 +131,8 @@ def parse(data: bytes) -> RawActivity:
         original_fields=originals,
         metadata={"file_id": file_id, "sessions": sessions, "devices": devices,
                   "source_platform": manufacturer or None,
+                  "original_activity_id": ident,
+                  "device": {k: file_id.get(k) for k in ("manufacturer", "product", "serial_number")},
                   "sport": next((s.get("sport") for s in sessions), None),
                   "sub_sport": next((s.get("sub_sport") for s in sessions), None),
                   "parser_version": PARSER_VERSION},
