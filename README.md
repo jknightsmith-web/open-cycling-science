@@ -6,16 +6,20 @@ Local first cycling performance analysis. Every number is either a sensor observ
 
 ## Development
 
-Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
+Requires Python 3.12+, [uv](https://docs.astral.sh/uv/) and Node.js 22 (or 20.19+) with npm.
 
 ```
-make setup   # once, fetches dependencies
-make test    # runs offline
+make setup   # once, fetches Python and npm dependencies
+make test    # backend and frontend unit tests, offline
+make e2e     # end to end tests in Chromium on synthetic data
+make perf    # load time, memory and chart timings with 1,000 synthetic activities
 make oracle  # standard library only arithmetic reference
-make run     # local server on http://127.0.0.1:8765 (OCS_PORT to change)
+make run     # builds the interface if needed and serves it on http://127.0.0.1:8765 (OCS_PORT to change)
 ```
 
-The science catalogue is at `/science`. The API is under `/api` (import with `POST /api/imports?filename=...` and the file as the request body).
+`make e2e` and `make perf` need a Chromium for Playwright (`cd frontend && npx playwright install chromium`, once).
+
+The interface has five screens: Overview, Library, Activity (one recording, or a confirmed ride), Science and Settings. The API is under `/api`; the server rendered catalogue is at `/catalogue`. Interface design: `docs/spec/06_INTERFACE_DESIGN.md`.
 
 Rider data lives outside this repository, by default in `~/Library/Application Support/OpenCyclingScience/` on macOS (override with `OCS_DATA_ROOT`). Never commit activity files.
 

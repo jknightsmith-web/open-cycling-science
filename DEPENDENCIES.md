@@ -44,3 +44,34 @@ MPL-2.0 is file level copyleft and applies only to hypothesis's own files, which
 |---|---|
 | Garmin FIT SDK (`garmin-fit-sdk`) | Proprietary FIT SDK licence; decision D8 |
 | Any GPL source (for example GoldenCheetah) | Incompatible with MIT distribution |
+
+## Frontend (WP8)
+
+Pinned in `frontend/package-lock.json`. Licences read from package metadata and the lockfile on 2026-10-24. The built bundle is served from 127.0.0.1 and loads nothing from a CDN.
+
+### Bundled into the interface
+
+| Package | Version | Licence | Purpose |
+|---|---|---|---|
+| react, react-dom | 19.3.1 | MIT | Interface (architecture 2) |
+| scheduler | 0.28.0 | MIT | Transitive, react-dom |
+| react-router | 7.18.4 | MIT | Screen routing. 7.18.4 rather than 7.13.0 because npm audit reported a high severity advisory for the earlier version |
+| cookie, set-cookie-parser | 1.1.1, 2.7.3 | MIT | Transitive, react-router; unused by this app |
+| @tanstack/react-query, @tanstack/query-core | 5.104.5 | MIT | API caching and paging |
+| uplot | 1.6.32 | MIT | Charts (UI D1) |
+
+### Development only (not distributed)
+
+| Package | Version | Licence | Purpose |
+|---|---|---|---|
+| vite | 8.3.5 | MIT | Build and dev server |
+| @vitejs/plugin-react | 6.1.2 | MIT | JSX transform |
+| typescript | 5.9.3 | Apache-2.0 | Type checking |
+| vitest | 5.0.5 | MIT | Unit tests |
+| jsdom | 29.1.1 | MIT | DOM for unit tests |
+| @testing-library/react, @testing-library/dom | 16.3.3, 10.4.2 | MIT | Component tests |
+| @playwright/test | 1.56.1 | Apache-2.0 | End to end and performance tests in Chromium |
+| openapi-typescript | 7.13.0 | MIT | Generates `src/api/schema.d.ts` from the backend schema |
+| @types/react, @types/react-dom, @types/node | 19.3.0, 19.3.0, 26.6.5 | MIT | Type definitions |
+
+The lockfile holds 160 packages in total: 125 MIT, 9 Apache-2.0, 4 ISC, 2 BSD-2-Clause, 2 BSD-3-Clause, 2 MIT-0, 1 BlueOak-1.0.0, 1 CC0-1.0, 1 Python-2.0, 1 MIT OR CC0-1.0, and 12 MPL-2.0. The MPL-2.0 packages are lightningcss and its platform binaries, which Vite uses at build time to minify CSS; no MPL code is included in the built interface. No GPL or AGPL package is present.

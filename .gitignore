@@ -21,3 +21,8 @@ __pycache__/
 .hypothesis/
 node_modules/
 dist/
+build/
+frontend/test-results/
+frontend/playwright-report/
+frontend/perf-results/
+*.tsbuildinfo
