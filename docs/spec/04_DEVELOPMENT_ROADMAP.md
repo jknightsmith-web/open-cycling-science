@@ -12,7 +12,7 @@ No durations are given: none can be estimated honestly before WP1 benchmarks and
 
 - Decisions D1 to D8 answered (done 2026-10-17, spec section 10).
 - Jimmy gives final approval of the revised set (done 2026-10-17, v1.0 frozen).
-- A code repository exists and is attached to the project; the spec set is copied into its `docs/` as the first commit. Status 2026-10-17: no GitHub repository is attached yet. Work proceeds in a local Git repository in the project files (`/mnt/project-files/code/open-cycling-science`) and is pushed unchanged, with history, once a repository is attached.
+- A code repository exists and is attached to the project; the spec set is copied into its `docs/` as the first commit. Status 2026-10-24: done. `jknightsmith-web/open-cycling-science` is attached and holds the full local history.
 
 Not a Gate 0 condition: real files. WP1, 2, 4, 5 and most of 3 run on synthetic data. Real anonymised files (one Fenix 8 FIT with power, one Wattbike Hub TCX, one MyWhoosh FIT, ideally one ride recorded by all three) are needed for the WP3 verification step and Gate 1, kept local and out of Git.
 

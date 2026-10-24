@@ -1,6 +1,6 @@
 # Phase One progress
 
-Updated 2026-10-18. Specification v1.0 (frozen). Repository: local Git at `/mnt/project-files/code/open-cycling-science`; no GitHub repository attached yet, so CI has not run.
+Updated 2026-10-24. Specification v1.0 (frozen). Repository: https://github.com/jknightsmith-web/open-cycling-science (full history pushed 2026-10-24); CI green on Linux (run 40079281341).
 
 Test run (fresh clone, `uv sync --locked`, `uv run --offline pytest`): **73 passed, 0 failed**, including 8 oracle unit tests, a 300 example property test against the oracle and 16 importer tests on synthetic FIT, TCX and zip files. Network access is blocked for the whole suite.
 
@@ -8,7 +8,7 @@ Test run (fresh clone, `uv sync --locked`, `uv run --offline pytest`): **73 pass
 
 | WP | Content | Status | Evidence | Remaining |
 |---|---|---|---|---|
-| 1 | Repo, licence, dependency register, offline run, CI | Done, CI unverified | MIT `LICENSE`, `DEPENDENCIES.md` with licences from package metadata, `make test`, `.github/workflows/ci.yml` | CI runs only once a GitHub repository exists |
+| 1 | Repo, licence, dependency register, offline run, CI | Done | MIT `LICENSE`, `DEPENDENCIES.md` with licences from package metadata, `make test`, `.github/workflows/ci.yml` | CI passed on GitHub Actions, run 40079281341 |
 | 2 | Data root, vault, migrations, storage benchmark | Done in container; Mac benchmark pending | `backend/config.py`, `backend/storage/vault.py`, schema with 14 tables and P6 CHECK constraints, migration 0001; `tests/test_storage.py`. Benchmark (`tests/bench_storage.py`, Linux container, not a Mac): 2,016,000 sample rows inserted at 55,344 rows/s, 97.6 bytes per row including the primary key index, one 2 h activity read in 4.7 ms | Run at 20M rows on the Mac. Linear extrapolation (inference, not measured): about 2 GB and 6 minutes for 20M rows, above the 60 bytes per row the architecture estimated |
 | 3 | FIT and TCX importers | Done on synthetic files; real file verification pending | `backend/importers/` (fit via fitdecode, tcx via defusedxml, zip with traversal and bomb limits, content sniffing); `tests/fit_encoder.py` writes FIT files with sentinels, absent fields, pauses, compressed timestamps and CRCs; `tests/test_importers.py` (16 tests) | Field mapping must be confirmed on a real Fenix 8 FIT, Hub TCX and MyWhoosh FIT. Persistence into the database comes with WP6 idempotent import |
 | 4 | Timeline builder, validity, suspect zero, recording statistics | Done on synthetic data | `backend/canonical/timeline.py`; `tests/test_timeline.py` (17 tests) | Real file check after WP3 |
