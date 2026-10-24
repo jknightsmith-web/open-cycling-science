@@ -46,6 +46,7 @@ export function Overview() {
   const span = weekly.data?.length ? [weekly.data[0].start_utc, weekly.data[weekly.data.length - 1].end_utc] : null;
   const totals = useQuery({ queryKey: ["totals", span], queryFn: () => api.totals(span![0], span![1]), enabled: !!span });
   const recent = useQuery({ queryKey: ["activities", "recent"], queryFn: () => api.activities(0, 10) });
+  const review = useQuery({ queryKey: ["review"], queryFn: api.ridesNeedingReview });
   const [info, setInfo] = useState<string | null>(null);
   const t = totals.data;
   const over = t?.potential_overcount;
@@ -64,6 +65,12 @@ export function Overview() {
           <span>{over.unconfirmed_group_count + over.pending_recording_count} possible duplicate {over.unconfirmed_group_count + over.pending_recording_count === 1 ? "ride is" : "rides are"} unconfirmed.
             Totals may be overcounted by up to {duration(over.duration_s)} and {number("kJ", over.work_kj)}.</span>
           <Link to="/library/duplicates">Review duplicates</Link>
+        </div>
+      )}
+      {review.data && review.data.length > 0 && (
+        <div className="notice" role="status" data-testid="needs-review">
+          <span>{review.data.length === 1 ? "A ride needs" : `${review.data.length} rides need`} new sources because a recording was deleted.</span>
+          <span>{review.data.map((id) => <Link key={id} to={`/rides/${id}`} style={{ marginLeft: 8 }}>ride {id}</Link>)}</span>
         </div>
       )}
       {t && (

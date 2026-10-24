@@ -22,11 +22,12 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select
 
 from ..config import layout
-from ..library import Library, aggregates, rides
+from ..library import Library, aggregates, deletion, exports, restore, rides
 from ..library.ingest import import_bytes
 from ..library.metric_store import COMPUTATION_VERSION, latest
 from ..library.series import envelope, load_timeline
 from ..science import registry
+from ..storage.maintenance import PARTIAL_PREFIX
 from ..storage.schema import (CHANNEL_COLUMNS, activities, activity_channels, app_settings, duplicate_group_events,
                               duplicate_group_members, duplicate_groups, ride_selection_history, rides as rides_t,
                               samples, source_files, timer_segments)
@@ -336,6 +337,97 @@ def create_app(lib: Library) -> FastAPI:
                 "registry": [{"metric_id": e["metric_id"], "version": str(e["version"]),
                               "last_reviewed": str(e["last_reviewed"])} for e in registry.entries().values()],
                 "host": "127.0.0.1"}
+
+    # ------------------------------------------------------------ export, restore, deletion (WP9)
+    @app.get("/api/exports", response_model=list[m.ExportEntry])
+    def list_exports():
+        return exports.list_exports(lib)
+
+    @app.post("/api/exports", response_model=m.ExportEntry)
+    def make_export(kind: str = Query(...)):
+        try:
+            return exports.build(lib, kind)
+        except exports.ExportError as exc:
+            raise HTTPException(422, str(exc)) from None
+
+    def _export_file(name: str) -> FileResponse:
+        try:
+            p = exports.export_path(lib, name)
+        except exports.ExportError as exc:
+            raise HTTPException(404, str(exc)) from None
+        return FileResponse(p, media_type="application/zip", filename=name)
+
+    @app.get("/api/exports/{name}")
+    def download_export(name: str):
+        return _export_file(name)
+
+    @app.delete("/api/exports/{name}", response_model=m.StatusOut)
+    def delete_export(name: str):
+        try:
+            exports.remove(lib, name)
+        except exports.ExportError as exc:
+            raise HTTPException(404, str(exc)) from None
+        return {"status": "deleted"}
+
+    @app.get("/api/export/archive")
+    def archive_now():
+        """Architecture 8: build a full archive and return it."""
+        return _export_file(exports.build(lib, "archive")["name"])
+
+    @app.post("/api/restore", response_model=m.RestoreReport)
+    async def post_restore(request: Request):
+        staging = lib.paths["backups"]
+        staging.mkdir(parents=True, exist_ok=True)
+        tmp = staging / f"{PARTIAL_PREFIX}restore-upload.zip"
+        try:
+            with open(tmp, "wb") as f:
+                async for chunk in request.stream():
+                    f.write(chunk)
+            try:
+                return restore.restore(lib, tmp)
+            except restore.RestoreError as exc:
+                raise HTTPException(409, str(exc)) from None
+        finally:
+            tmp.unlink(missing_ok=True)
+
+    def _deletion(fn, key: int):
+        try:
+            return fn(lib, key).as_dict()
+        except deletion.DeletionError as exc:
+            raise HTTPException(404, str(exc)) from None
+
+    @app.get("/api/activities/{aid}/deletion", response_model=m.DeletionReport)
+    def preview_activity_deletion(aid: int):
+        return _deletion(deletion.preview_activity, aid)
+
+    @app.delete("/api/activities/{aid}", response_model=m.DeletionReport)
+    def delete_activity(aid: int):
+        return _deletion(deletion.delete_activity, aid)
+
+    @app.get("/api/imports/{sf_id}/deletion", response_model=m.DeletionReport)
+    def preview_file_deletion(sf_id: int):
+        return _deletion(deletion.preview, sf_id)
+
+    @app.delete("/api/imports/{sf_id}", response_model=m.DeletionReport)
+    def delete_file(sf_id: int):
+        return _deletion(deletion.delete_source_file, sf_id)
+
+    @app.get("/api/data/delete-all", response_model=m.DeleteAllPreview)
+    def delete_all_preview():
+        return deletion.everything_preview(lib)
+
+    @app.post("/api/data/delete-all", response_model=m.DeleteAllResult)
+    def delete_all(body: m.DeleteAllBody):
+        try:
+            return deletion.delete_everything(lib, body.token)
+        except deletion.DeletionError as exc:
+            raise HTTPException(409, str(exc)) from None
+
+    @app.get("/api/rides-needing-review", response_model=list[int])
+    def rides_needing_review():
+        with lib.engine.connect() as c:
+            return [r[0] for r in c.execute(select(rides_t.c.id).where(rides_t.c.needs_review, rides_t.c.active)
+                                            .order_by(rides_t.c.id))]
 
     # ------------------------------------------------------------ science
     @app.get("/api/science/metrics", response_model=list[m.ScienceRow])

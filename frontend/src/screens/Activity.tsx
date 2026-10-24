@@ -10,6 +10,7 @@ import { ValidityCell } from "../components/Validity";
 import { Pager } from "../components/Pager";
 import { SelectionForm, memberName } from "../components/SelectionForm";
 import { InfoDrawer } from "../components/InfoDrawer";
+import { DeleteRecording } from "../components/DeleteRecording";
 
 const ORDER = ["M001", "M002", "M003", "M004"];
 const sortMetrics = (ms: MetricValue[]) => [...ms].sort((a, b) => ORDER.indexOf(a.metric_id) - ORDER.indexOf(b.metric_id)
@@ -51,12 +52,12 @@ function Samples({ a }: { a: ActivityDetail }) {
   const zone = useZone();
   const [offset, setOffset] = useState(0);
   const limit = 60;
-  const { data } = useQuery({ queryKey: ["samples", a.id, offset], queryFn: () => api.samples(a.id, offset, limit), placeholderData: (prev) => prev });
+  const { data, isPlaceholderData } = useQuery({ queryKey: ["samples", a.id, offset], queryFn: () => api.samples(a.id, offset, limit), placeholderData: (prev) => prev });
   if (!data) return null;
   return (
     <details data-testid="samples">
       <summary>{data.total} samples, {limit} per page</summary>
-      <table aria-label="Samples">
+      <table aria-label="Samples" aria-busy={isPlaceholderData}>
         <thead><tr><th>Time</th>{CHANNELS.map((c) => <th key={c}>{CHANNEL_NAMES[c]}</th>)}</tr></thead>
         <tbody>{data.items.map((s) => (
           <tr key={s.sample_index}><td className="num">{timeOfDay(s.timestamp_utc, zone)}</td>
@@ -158,6 +159,9 @@ export function ActivityScreen() {
       <Samples a={a} />
       <h2>Provenance</h2>
       <Provenance a={a} />
+      <h2>Delete</h2>
+      <p className="small muted">Removes this recording and everything derived from it. Other recordings are not changed.</p>
+      <DeleteRecording activityId={a.id} />
     </article>
   );
 }
@@ -199,6 +203,7 @@ export function RideScreen() {
   if (!ride || members.some((m) => !m.data)) return <p className="muted">Loading…</p>;
   const acts = members.map((m) => m.data!);
   const timer = acts.find((a) => a.id === ride.sources.timer) ?? acts[0];
+  if (!timer) return <p className="muted">This ride has no recordings left.</p>;
   const chartAct = acts.find((a) => a.id === (shown ?? ride.sources.power ?? timer.id)) ?? timer;
   const sourceOf = (m: MetricValue) => {
     const a = acts.find((x) => x.id === m.source_activity_ids[0]);
@@ -210,7 +215,14 @@ export function RideScreen() {
       <p className="muted">{ride.kind === "group" ? `Ride confirmed from ${acts.length} recordings` : "Ride from one recording"}
         {!ride.active && " · not counted: the group was reopened"}
         {ride.group_id && <> · <Link to={`/library/duplicates/${ride.group_id}`}>group {ride.group_id}</Link></>}</p>
-      <Metrics metrics={ride.metrics} sourceOf={sourceOf} />
+      {ride.needs_review && (
+        <div className="notice" role="status" data-testid="needs-review">
+          <span>A recording this ride used was deleted. {FIELDS.filter((f) => ride.sources[f] === null && acts.some((a) => f === "timer" || a.channels[f]?.present))
+            .map((f) => CHANNEL_NAMES[f]).join(", ") || "Some fields"} now have no source.
+            {ride.sources.timer === null && " Without a timer source the ride is not counted in totals."} Choose the sources again below.</span>
+        </div>)}
+      {ride.metrics.length > 0 ? <Metrics metrics={ride.metrics} sourceOf={sourceOf} />
+        : <p className="muted">No values until a timer source is chosen.</p>}
       <h2>Sources</h2>
       <RideSources ride={ride} members={acts} />
       <h2>Recordings</h2>

@@ -230,6 +230,7 @@ class SelectionHistoryRow(Model):
     activity_id: Optional[int]
     selected_at_utc: float
     selected_by: str
+    source_deleted: bool
 
 
 class Ride(Model):
@@ -308,3 +309,70 @@ class ScienceRow(Model):
     units: str
     complete: bool
     register_url: str
+
+
+# ---------------------------------------------------------------- WP9: export, restore, deletion
+
+class ExportEntry(Model):
+    name: str
+    kind: Optional[str]
+    bytes: int
+    created_at_utc: Optional[float]
+    recordings: int
+    path: str
+    readable: bool
+
+
+class GroupEffect(Model):
+    group_id: int
+    status: str
+    effect: str
+    ride_id: Optional[int]
+    fields_unselected: list[str]
+    remaining_members: list[int]
+
+
+class DeletionReport(Model):
+    source_file_id: int
+    activity_id: Optional[int]
+    original_filename: Optional[str]
+    groups: list[GroupEffect]
+    rides_needing_review: list[int]
+    exports_removed: list[str]
+    vault_object_removed: bool
+    checkpoint: list[int]
+    committed: bool
+
+
+class DataEntry(Model):
+    path: str
+    bytes: int
+
+
+class DeleteAllPreview(Model):
+    data_root: str
+    counts: dict[str, int]
+    entries: list[DataEntry]
+    exports: list[str]
+    kept_not_ours: list[str]
+    token: str
+    cannot_delete: list[str]
+
+
+class DeleteAllBody(Model):
+    token: str
+
+
+class DeleteAllResult(Model):
+    removed: list[DataEntry]
+    counts: dict[str, int]
+    kept_not_ours: list[str]
+
+
+class RestoreReport(Model):
+    restored_rows: dict[str, int]
+    vault_objects: int
+    recompute_check: dict[str, Any]
+    archive_created_at_utc: float
+    app_version: str
+    checkpoint: list[int]

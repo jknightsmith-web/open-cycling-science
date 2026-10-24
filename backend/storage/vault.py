@@ -70,7 +70,27 @@ class Vault:
             raise VaultIntegrityError(f"vault object {digest} rehashes to {actual}")
 
     def delete(self, digest: str) -> None:
-        """Remove an object. Callers must first confirm no activity references it."""
+        """Remove an object and its now empty fan out folders. Callers confirm nothing references it."""
         p = self.path_for(digest)
-        os.chmod(p, stat.S_IRUSR | stat.S_IWUSR)
-        p.unlink()
+        if p.exists():
+            os.chmod(p, stat.S_IRUSR | stat.S_IWUSR)
+            p.unlink()
+        for d in (p.parent, p.parent.parent):
+            try:
+                d.rmdir()
+            except OSError:
+                break   # not empty, or already gone
+
+    def objects(self) -> list[str]:
+        """Digests of every stored object."""
+        if not self.root.exists():
+            return []
+        return sorted(f.name for f in self.root.glob("*/*/*") if f.is_file() and not f.name.startswith(".incoming-"))
+
+    def remove_incomplete(self) -> int:
+        """Delete temporary files left by an interrupted write."""
+        n = 0
+        for f in self.root.glob("*/*/.incoming-*") if self.root.exists() else []:
+            f.unlink()
+            n += 1
+        return n

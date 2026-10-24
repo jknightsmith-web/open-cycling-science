@@ -1,18 +1,21 @@
 import { useState } from "react";
-import { Link, NavLink, Route, Routes, useNavigate, useParams } from "react-router";
+import { Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from "react-router";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError, CHANNELS, type ActivityRow, type DuplicateGroup, type S } from "../api/client";
 import { useZone } from "../api/hooks";
 import { CHANNEL_NAMES, dateTime, duration, pct } from "../format/format";
 import { Pager } from "../components/Pager";
 import { SelectionForm, memberName } from "../components/SelectionForm";
+import { DeleteRecording } from "../components/DeleteRecording";
 
 const PAGE = 50;
 
 export function Library() {
+  const deleted = (useLocation().state as { deleted?: boolean } | null)?.deleted;
   return (
     <>
       <h1>Library</h1>
+      {deleted && <p className="notice" role="status">The recording was deleted.</p>}
       <Importer />
       <div className="tabs" role="tablist">
         <NavLink to="/library" end>Activities</NavLink>
@@ -124,7 +127,8 @@ function Imports() {
           <tr key={r.source_file_id} data-status={r.validation_status}>
             <td>{dateTime(r.imported_at_utc, zone)}</td><td>{r.original_filename}</td><td>{r.media_format.toUpperCase()}</td>
             <td>{r.validation_status === "ok" ? <Link to={`/activities/${r.activity_id}`}>imported</Link>
-              : <span className="error">failed ({String(r.error?.code)}): {String(r.error?.message)}</span>}</td>
+              : <><span className="error">failed ({String(r.error?.code)}): {String(r.error?.message)}</span>{" "}
+                <DeleteRecording sourceFileId={r.source_file_id} compact /></>}</td>
             <td><code className="small" title={r.sha256}>{r.sha256.slice(0, 12)}…</code></td>
           </tr>))}</tbody>
       </table>

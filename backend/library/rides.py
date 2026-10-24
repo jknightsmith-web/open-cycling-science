@@ -209,6 +209,8 @@ def _input_revision(c: Connection, ride_id: int, src: dict, runs_by_activity: di
 
 def store_ride_metrics(c: Connection, ride_id: int, now: float) -> None:
     src = sources(c, ride_id)
+    if src["timer"] is None:
+        return   # only after the timer source was deleted; the ride waits for the rider (spec 8.4)
     used = {a for a in (src["timer"], src["power"]) if a is not None}
     runs = latest(c, "activity", used)
     revision = _input_revision(c, ride_id, src, runs)

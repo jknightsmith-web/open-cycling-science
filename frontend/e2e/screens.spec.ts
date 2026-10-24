@@ -111,6 +111,8 @@ test("UI-07 observed zero, missing, invalid and suspect zero are told apart in w
     const range = (await samples.getByText(/ of \d+$/).textContent())!;
     await next.click();
     await expect(samples.getByText(/ of \d+$/)).not.toHaveText(range);
+    // The pager moves before the page arrives; read the rows only once they are the new page's.
+    await expect(page.getByRole("table", { name: "Samples" })).toHaveAttribute("aria-busy", "false");
   }
   expect([...found].sort()).toEqual(["invalid", "missing", "observed"]);
   expect(zeroObserved).toBe(true);

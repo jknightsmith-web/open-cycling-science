@@ -15,15 +15,16 @@ _CRC_TABLE = (0x0000, 0xCC01, 0xD801, 0x1400, 0xF001, 0x3C00, 0x2800, 0xE401,
               0xA001, 0x6C00, 0x7800, 0xB401, 0x5000, 0x9C01, 0x8801, 0x4400)
 
 # base type id -> (struct code, invalid sentinel)
-ENUM, SINT8, UINT8, UINT16, UINT32, STRING = 0x00, 0x01, 0x02, 0x84, 0x86, 0x07
+ENUM, SINT8, UINT8, UINT16, UINT32, SINT32, STRING = 0x00, 0x01, 0x02, 0x84, 0x86, 0x85, 0x07
 _BASE = {ENUM: ("B", 0xFF), SINT8: ("b", 0x7F), UINT8: ("B", 0xFF),
-         UINT16: ("H", 0xFFFF), UINT32: ("I", 0xFFFFFFFF)}
+         UINT16: ("H", 0xFFFF), UINT32: ("I", 0xFFFFFFFF), SINT32: ("i", 0x7FFFFFFF)}
 
 # message number -> {field name: (field number, base type, scale)}
 MESSAGES = {
     "file_id": (0, {"type": (0, ENUM, 1), "manufacturer": (1, UINT16, 1), "product": (2, UINT16, 1),
                     "serial_number": (3, UINT32, 1), "time_created": (4, UINT32, 1)}),
-    "record": (20, {"timestamp": (253, UINT32, 1), "heart_rate": (3, UINT8, 1), "cadence": (4, UINT8, 1),
+    "record": (20, {"timestamp": (253, UINT32, 1), "position_lat": (0, SINT32, 1), "position_long": (1, SINT32, 1),
+                    "heart_rate": (3, UINT8, 1), "cadence": (4, UINT8, 1),
                     "power": (7, UINT16, 1), "speed": (6, UINT16, 1000), "distance": (5, UINT32, 100),
                     "temperature": (13, SINT8, 1)}),
     "event": (21, {"timestamp": (253, UINT32, 1), "event": (0, ENUM, 1), "event_type": (1, ENUM, 1)}),

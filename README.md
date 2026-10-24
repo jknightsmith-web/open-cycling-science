@@ -23,6 +23,12 @@ The interface has five screens: Overview, Library, Activity (one recording, or a
 
 Rider data lives outside this repository, by default in `~/Library/Application Support/OpenCyclingScience/` on macOS (override with `OCS_DATA_ROOT`). Never commit activity files.
 
+Your data, from Settings:
+
+- **Export.** Original files only, derived data (CSV and JSON Lines) or a full archive with a manifest of SHA256 hashes. Exports are saved in `exports/` in the data root and can be downloaded. Original files contain any GPS positions the device recorded; the database does not store them.
+- **Restore.** A full archive restores into an empty library after every file and value has been checked.
+- **Delete.** One recording (Activity screen, with a preview of what goes, including saved exports that contain it), or everything the app created in the data root. Nothing is kept as a tombstone. The app cannot delete copies outside the data folder, Time Machine or APFS snapshots, old SSD blocks (FileVault protects them) or recordings held by Garmin, Wattbike or MyWhoosh.
+
 ## Licence
 
 MIT. Dependencies keep their own licences; see `DEPENDENCIES.md`.

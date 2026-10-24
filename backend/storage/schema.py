@@ -194,6 +194,9 @@ ride_selection_history = Table(
     Column("activity_id", Integer, _fk("activities.id")),
     Column("selected_at_utc", Float, nullable=False),
     Column("selected_by", String(16), nullable=False),
+    # True when the selected recording was later deleted: activity_id is then NULL and
+    # nothing identifies the deleted file (spec 8.4), but the row still shows a source was chosen.
+    Column("source_deleted", Boolean, nullable=False, server_default="0"),
 )
 
 channel_preferences = Table(

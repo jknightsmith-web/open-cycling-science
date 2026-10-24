@@ -14,6 +14,7 @@ import fitdecode
 
 from ..canonical.model import RawActivity, RawRecord, TimerEvent
 from .errors import ImportFailure
+from .location import strip_location
 
 PARSER_VERSION = f"fit-1.0+fitdecode-{fitdecode.__version__}"
 
@@ -50,7 +51,7 @@ def _jsonable(v: Any) -> Any:
 
 
 def _fields(frame) -> dict[str, Any]:
-    return {f.name: _jsonable(f.value) for f in frame.fields}
+    return strip_location({f.name: _jsonable(f.value) for f in frame.fields})
 
 
 def parse(data: bytes) -> RawActivity:

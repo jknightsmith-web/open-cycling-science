@@ -2,7 +2,7 @@
 
 Updated 2026-10-24. Specification v1.0 (frozen). Repository: https://github.com/jknightsmith-web/open-cycling-science (full history pushed 2026-10-24); CI green on Linux (run 40079281341).
 
-Test run 2026-10-24 after WP8, Linux container: backend `uv run --offline pytest` **135 passed, 0 failed** (WP7 had 122; WP8 adds the series envelope tests including a 300 example gap property test, and the API addition tests); frontend `npm test` **15 passed, 0 failed**; end to end `npx playwright test` **11 passed, 0 failed**; performance run 1 passed. Network access is blocked for the backend suite, and every end to end test aborts and fails on any request that is not to 127.0.0.1. Every test uses synthetic files; no real device compatibility is claimed (P10).
+Test run 2026-10-24 after WP9, Linux container: backend `uv run --offline pytest` **186 passed, 0 failed** (WP8 had 135; WP9 adds 51: export and restore 24, deletion 14, interrupted operations 6, running server network 2, API 5); frontend `npm test` **15 passed, 0 failed**; end to end `npx playwright test` **16 passed, 0 failed** (WP8 had 11; WP9 adds 5); `make types-check` clean. Network access is blocked for the backend suite, the running server is audited for every socket call (below), and every end to end test aborts and fails on any request that is not to 127.0.0.1. Every test uses synthetic files; no real device compatibility is claimed (P10).
 
 ## Work packages
 
@@ -16,7 +16,8 @@ Test run 2026-10-24 after WP8, Linux container: backend `uv run --offline pytest
 | 6 | Idempotent import, duplicate proposals, decisions, rides, per channel selection, overcount | Done on synthetic data | `backend/library/` (ingest, duplicates, rides, aggregates, metric_store); migration 0002; `tests/test_ingest.py`, `tests/test_rides.py`, `tests/test_api.py` | Real three source ride for Gate 1 |
 | 7 | Registry for M001 to M004, completeness validator, Science catalogue | Done | `registry/metrics/*.yaml`, `registry/bibliography.yaml`, `registry/states.yaml`, `backend/science/registry.py`, `/catalogue` pages and `/api/science`; `tests/test_registry.py` | None |
 | 8 | Interface: Overview, Library, Activity (recording and ride modes), Science, Settings | Done on Linux, awaiting review; macOS measurement pending | Design `docs/spec/06_INTERFACE_DESIGN.md` v0.2; API additions B1 to B8 in `backend/api/`, `backend/library/series.py`, migration 0003; `frontend/` (React, uPlot); `frontend/e2e/screens.spec.ts`, `frontend/e2e/perf.spec.ts`; acceptance table below | macOS run of `make run` and `make perf`; Jimmy's review |
-| 9, 10 | Export and deletion, benchmark | Not started | | Waits for WP8 review |
+| 9 | Export, archive restoration, deletion | Done on synthetic data, awaiting review | `backend/library/exports.py`, `restore.py`, `deletion.py`, `backend/storage/maintenance.py`, `backend/importers/location.py`; migration 0004; endpoints under `/api/exports`, `/api/export/archive`, `/api/restore`, `/api/activities/{id}` and `/api/imports/{id}` (DELETE and `/deletion` preview), `/api/data/delete-all`, `/api/rides-needing-review`; tests `test_export_restore.py`, `test_deletion.py`, `test_interruptions.py`, `test_running_app_network.py`, `test_api_wp9.py`, `frontend/e2e/wp9.spec.ts` | Jimmy's review of the choices below |
+| 10 | Benchmark | Not started | | Waits for WP9 review |
 
 ## Acceptance criteria (spec 9)
 
@@ -27,7 +28,7 @@ Test run 2026-10-24 after WP8, Linux container: backend `uv run --offline pytest
 | 3 | Identical bytes create no activity | **Pass** (synthetic): reimport reports the existing activity, including for zip members and failed files |
 | 4, 4a | Duplicate proposal, confirmation, per channel selection | **Pass** on synthetic Fenix, Hub and MyWhoosh style files; real files pending |
 | 5 | Vault SHA256 equals original | **Pass** |
-| 6 | Zero, missing, invalid distinct | **Pass** from FIT and TCX parsing through timeline and database (sentinel becomes invalid, absent field becomes missing, CHECK constraints reject zero standing in for missing); display **Pass** (UI-07, end to end); export part pending (WP9) |
+| 6 | Zero, missing, invalid distinct | **Pass** from FIT and TCX parsing through timeline and database (sentinel becomes invalid, absent field becomes missing, CHECK constraints reject zero standing in for missing); display **Pass** (UI-07, end to end); export **Pass**: in the derived CSV an observed zero is written `0.0`, missing and invalid are empty and told apart by the `power_validity` column, JSON Lines writes `null`; the archive restores every row equal (`test_export_restore.py`: `test_derived_csv_follows_rfc4180_with_empty_for_missing_and_no_rounding`, `test_full_archive_round_trip_reproduces_every_row_hash_and_value`) |
 | 7 | 200 W and 100/300 W results | **Pass** |
 | 8 | 3 s gap invalidates crossing MMP windows | **Pass** |
 | 9 | Timer stop changes timer, not elapsed | **Pass** |
@@ -35,9 +36,9 @@ Test run 2026-10-24 after WP8, Linux container: backend `uv run --offline pytest
 | 11 | Low coverage: M002 unavailable, M003 lower bound | **Pass** |
 | 12 | Every metric opens its register entry | **Pass** (UI-08, end to end) |
 | 13 | Production agrees with oracle | **Pass** (fixtures plus 300 generated activities with gaps, pauses, fractional intervals) |
-| 14 | Archive round trip | Not started (WP9) |
-| 15 | Deletion marker scan | Not started (WP9); `secure_delete` pragma and cascades in place |
-| 16 | Offline import, calculation, export | Partial: test suite runs with networking blocked; import and export not built |
+| 14 | Archive round trip | **Pass** on synthetic data. Export, delete everything, restore into an empty install: every row of every table equal, every vault object rehashed equal, metric values and states equal, and each original re-parsed and recomputed to the archived timeline digest and values (`test_export_restore.py`; end to end in `wp9.spec.ts`). Tampered, truncated, extra member, wrong schema and non empty target archives are refused before anything is written |
+| 15 | Deletion marker scan | **Pass** on synthetic data. Every deletion test ends with a byte scan of every file and path under the data root (database, WAL, SHM, vault, exports) for the deleted file's SHA256 (hex in either case, and raw bytes) and its filename (UTF-8 and UTF-16), and checks the WAL is truncated; no VACUUM is run (`test_deletion.py`, 14 tests). Cases: a solo recording whose filename is a marker, the power source of a confirmed ride, the timer source, a confirmed group dissolving, a proposed pair, a pending member, an export holding the file, every recording deleted one by one, delete everything. A control test shows the scan finds the hash and marker before deletion. Also passes after a crash between commit and file removal (`test_interruptions.py`). GPS positions are not in the database at all (scan for the latitude value) |
+| 16 | Offline import, calculation, export | **Pass**. Backend suite with networking blocked; the running server (uvicorn, `python -m backend.api`) run under a PEP 578 audit hook (`tests/netwatch.py`) through import, confirmation, every screen's API, all three exports, deletion, delete everything and restore records only the bind on 127.0.0.1 (`test_running_app_network.py`); the same hook wraps the end to end server and the last e2e test checks its log. A positive control proves the hook catches a call to 192.0.2.1 |
 | 17 | Data root outside source tree, rider files ignored | **Pass** |
 | 17a | Recording statistics, no rejection on recording mode | **Pass** (UI-11, end to end) |
 | 18 | Large history benchmark | Not started (WP10). Indicative only: 3 h at 1 Hz builds in 0.06 s, five MMP durations in 0.13 s |
@@ -77,6 +78,20 @@ Overview with 1,000 activities: median 284 ms, max 309 ms. Raw results: `fronten
 - The Samples table is collapsed by default and pages 60 rows at a time.
 - M004 cards on the Activity and Overview screens are titled by window (5 s, 1 min) under a "Highest observed power" heading; the full name stays in the information panel.
 
+## WP9 choices within the spec (need Jimmy's review)
+
+1. GPS positions are no longer stored. Spec 8.2 keeps positions out of the database; the WP4 importer still kept them in `original_field_json`. Migration 0004 strips them from existing rows and the importer drops any field named for position, latitude or longitude. Exported originals still contain GPS (the files are unchanged); Settings warns.
+2. Exports are written to `exports/` in the data root (atomic, `.partial-` then rename) and listed in Settings for download. Deleting a recording also deletes every saved export that contains it, and the confirmation lists them.
+3. The JSON form of the derived export is JSON Lines, one file per table, beside the CSV.
+4. When a confirmed group falls below two members it dissolves: the ride, its runs and its selection history go, and the remaining recording counts on its own again. When it keeps two or more members, history rows keep their place with the activity id cleared and `source_deleted` set.
+5. Ride scope runs whose provenance names the deleted file are deleted and recomputed from the remaining selection. Deletion refuses to commit if any remaining run's provenance still contains the hash.
+6. A ride whose timer source was deleted has no values and is not counted until the rider chooses a new timer. Overview and the ride page show a notice; `/api/rides-needing-review` lists them.
+7. Restore only goes into an empty install with the same schema revision, and checks the archive manifest, every member's size and hash, every original against its row, metric definitions, and a recompute of each recording before it writes anything.
+8. `DELETE /api/imports/{id}` deletes a file that failed to parse (no activity), from the Library's failed list.
+9. Delete everything removes only the folders the app created (`vault`, `db`, `exports`, `backups`, `logs`), lists anything else it keeps, and leaves an empty working install. It needs a token from the preview, so the confirmation shows exactly what goes.
+10. Single deletions use `secure_delete` and a WAL checkpoint, not VACUUM; the marker scan passes without it. Delete everything removes the files outright.
+11. Opening the library recovers from an interrupted operation: it removes orphan vault objects, half written vault and export files and any export that holds a file no longer in the library, then truncates the WAL.
+
 ## Implementation choices within the spec
 
 - Time comparisons use a 1 microsecond tolerance. Float64 epoch seconds carry about 0.2 microsecond error, so a tighter tolerance misclassified fractional TCX style timestamps in testing.
@@ -101,12 +116,13 @@ Overview with 1,000 activities: median 284 ms, max 309 ms. Raw results: `fronten
 ## Outstanding issues
 
 1. WP3 real file verification is pending until Jimmy supplies Fenix 8, Wattbike Hub and MyWhoosh recordings. Nothing here verifies real device compatibility.
-2. WP9 deletion must remove ride scope runs and selection history that reference a deleted activity, so no hash survives (spec 8.4, acceptance 15). The cascades cover samples, channels, members, events and history rows; ride runs carry hashes in `provenance_json` and need explicit removal.
+2. Closed in WP9: ride scope runs, `provenance_json`, selection history and duplicate events are scrubbed on deletion (acceptance 15).
 3. R12 (Pinot and Grappe 2011) is still an unconfirmed DOI. It does not block M004, whose status is IDENTITY, but it stays visible in the catalogue.
 4. The register document's `software_test_status` fields (02, frozen 2026-10-17) still say "production not built". The in app registry carries the current status. The document will be updated at the next spec revision.
-5. FastAPI pulls in `opentelemetry-api`. It sends nothing without an SDK, and the offline test covers the suite, but WP9's network test should run against the live server too.
+5. Closed in WP9: the running server was audited for socket calls and made none except the bind on 127.0.0.1. FastAPI still installs `opentelemetry-api`, which sends nothing without an SDK.
 6. The test client prints a deprecation warning from Starlette about httpx. It does not affect results.
 7. WP8 performance and the `make run` launch have been measured on Linux only. Run `make setup`, `make run` and `make perf` on the Mac to get macOS figures (UI-01, UI-16 to UI-18).
 8. `make run` now builds the interface first, so the Mac needs Node.js 22 (or 20.19+) and npm as well as uv.
 9. DOI links in the register open in the system browser when clicked. That is the only outbound action in the interface and only happens on a click.
-
+10. What the app cannot delete, shown in Settings: copies outside the data folder (downloaded or moved exports), Time Machine backups and APFS local snapshots, old SSD blocks (FileVault is relied on to protect them), and recordings in vendor accounts.
+11. WP9 restore and deletion are tested on Linux only. The Mac run (`make test`, `make e2e`) should repeat them, including the marker scan on APFS.

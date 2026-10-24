@@ -69,7 +69,24 @@ export const api = {
   science: () => call<S["ScienceRow"][]>("/api/science/metrics"),
   entry: (id: string) => call<RegisterEntry>(`/api/science/metrics/${id}`),
   states: () => call<StatesDoc>("/api/science/states"),
+  // WP9: export, restore, deletion
+  exports: () => call<S["ExportEntry"][]>("/api/exports"),
+  makeExport: (kind: ExportKind) => call<S["ExportEntry"]>(`/api/exports?kind=${kind}`, { method: "POST" }),
+  removeExport: (name: string) => call<S["StatusOut"]>(`/api/exports/${encodeURIComponent(name)}`, { method: "DELETE" }),
+  exportUrl: (name: string) => `/api/exports/${encodeURIComponent(name)}`,
+  restore: (file: File) => file.arrayBuffer().then((buf) =>
+    call<S["RestoreReport"]>("/api/restore", { method: "POST", headers: { "content-type": "application/zip" }, body: buf })),
+  previewDeleteActivity: (id: number) => call<Deletion>(`/api/activities/${id}/deletion`),
+  deleteActivity: (id: number) => call<Deletion>(`/api/activities/${id}`, { method: "DELETE" }),
+  previewDeleteFile: (id: number) => call<Deletion>(`/api/imports/${id}/deletion`),
+  deleteFile: (id: number) => call<Deletion>(`/api/imports/${id}`, { method: "DELETE" }),
+  deleteAllPreview: () => call<S["DeleteAllPreview"]>("/api/data/delete-all"),
+  deleteAll: (token: string) => call<S["DeleteAllResult"]>("/api/data/delete-all", json("POST", { token })),
+  ridesNeedingReview: () => call<number[]>("/api/rides-needing-review"),
 };
+
+export type ExportKind = "originals" | "derived" | "archive";
+export type Deletion = S["DeletionReport"];
 
 export interface SourceRef { id: string; role: string; citation?: string; doi?: string | null; status?: string }
 export interface RegisterEntry {
