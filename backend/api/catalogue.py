@@ -42,7 +42,7 @@ def _value(v: Any) -> str:
 
 def index_page() -> str:
     rows = "".join(
-        f"<tr><td><a href='/science/{escape(e['metric_id'])}'>{escape(e['metric_id'])}</a></td>"
+        f"<tr><td><a href='/catalogue/{escape(e['metric_id'])}'>{escape(e['metric_id'])}</a></td>"
         f"<td>{escape(e['display_name'])}</td><td>{escape(e['classification'])}</td><td>{escape(e['units'])}</td>"
         f"<td>{escape(str(e['version']))}</td><td>{'complete' if not registry.problems(e) else 'incomplete'}</td></tr>"
         for e in registry.entries().values())
@@ -74,7 +74,7 @@ def metric_page(metric_id: str) -> str:
     rows.insert(3, f"<tr><th>evidence label</th><td>{escape(e['evidence_label'])}</td></tr>")
     rows.insert(5, f"<tr><th>outputs</th><td>{_value(e.get('outputs', {}))}</td></tr>")
     warn = ("<p><b>Entry incomplete, metric not displayable:</b> " + escape("; ".join(probs)) + "</p>") if probs else ""
-    body = (f"<p><a href='/science'>Science catalogue</a></p><h1>{escape(e['metric_id'])} {escape(e['display_name'])}</h1>"
+    body = (f"<p><a href='/catalogue'>Science catalogue</a></p><h1>{escape(e['metric_id'])} {escape(e['display_name'])}</h1>"
             f"<p><span class='tag'>{escape(e['classification'])}</span><span class='tag'>v{escape(str(e['version']))}</span>"
             f"<span class='tag'>{escape(e['units'])}</span></p>{warn}<table>{''.join(rows)}</table>"
             f"<p class='muted'>Source: {escape(e['documentation_path'])}. Status codes: V confirmed, P from the starter "

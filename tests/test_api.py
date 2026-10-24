@@ -40,7 +40,8 @@ def test_every_metric_value_opens_its_register_entry(client):
         assert REQUIRED <= set(m) and m["state"] != "not_displayable"
         entry = client.get(m["register_url"]).json()
         assert entry["problems"] == [] and all(f in entry for f in registry.CONTRACT_FIELDS)
-        page = client.get(m["catalogue_url"])
+        assert m["catalogue_url"] == f"/science/{m['metric_id']}"          # frontend route
+        page = client.get(f"/catalogue/{m['metric_id']}")                   # no JavaScript fallback
         assert page.status_code == 200 and m["metric_id"] in page.text
         assert m["uncertainty"] == "not quantified"
 
@@ -56,7 +57,7 @@ def test_value_hidden_when_entry_incomplete(client, monkeypatch):
 def test_samples_endpoint_keeps_zero_missing_and_invalid_apart(client):
     recs = [{"t": T0, "power": 0, "heart_rate": 0}, {"t": T0 + 1, "power": INVALID}, {"t": T0 + 2, "power": 210}]
     aid = upload(client, activity_file(recs), "s.fit")["activity_id"]
-    s = client.get(f"/api/activities/{aid}/samples").json()
+    s = client.get(f"/api/activities/{aid}/samples").json()["items"]
     assert s[0]["channels"]["power"] == {"value": 0.0, "validity": "observed"}
     assert s[0]["channels"]["heart_rate"] == {"value": None, "validity": "invalid"}
     assert s[1]["channels"]["power"] == {"value": None, "validity": "invalid"}
@@ -84,14 +85,14 @@ def test_duplicate_workflow_over_http(client):
 
 
 def test_catalogue_lists_every_entry_and_needs_no_network_assets(client):
-    page = client.get("/science").text
+    page = client.get("/catalogue").text
     for metric_id in registry.PHASE_ONE_METRICS:
-        assert f"/science/{metric_id}" in page
-    for text in [page] + [client.get(f"/science/{m}").text for m in registry.PHASE_ONE_METRICS]:
+        assert f"/catalogue/{metric_id}" in page
+    for text in [page] + [client.get(f"/catalogue/{m}").text for m in registry.PHASE_ONE_METRICS]:
         assert "<script" not in text and "<link" not in text
         assert not re.search(r"(src|href)=['\"]https?://(?!doi\.org/)", text)
-    m4 = client.get("/science/M004").text
+    m4 = client.get("/catalogue/M004").text
     for field in ("equation", "assumptions", "known limitations", "scientific validation status", "units"):
         assert field in m4
     assert "Highest observed" in m4 and "10.1007/s00421-021-04833-y" in m4
-    assert client.get("/science/M099").status_code == 404
+    assert client.get("/catalogue/M099").status_code == 404

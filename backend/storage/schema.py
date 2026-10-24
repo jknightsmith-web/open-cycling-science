@@ -245,3 +245,10 @@ metric_values = Table(
     CheckConstraint("(numeric_value IS NULL) = (state NOT IN ('valid', 'lower_bound', "
                     "'unconfirmed_duplicates_included'))", name="ck_value_null_iff_unavailable"),
 )
+
+# Display preferences (WP8). Never read by any calculation (spec 5.1).
+app_settings = Table(
+    "app_settings", metadata,
+    Column("key", String(64), primary_key=True),
+    Column("value_json", Text, nullable=False),
+)

@@ -109,3 +109,34 @@ def _overcount(c: Connection, start_utc: float, end_utc: float) -> dict:
     return {"unconfirmed_group_count": groups_in_range, "pending_recording_count": pending,
             "ride_count": len(surplus), "duration_s": duration, "work_kj": work,
             "activity_ids": sorted(surplus)}
+
+
+def iso_weeks(tz_name: str, first_day: str, last_day: str) -> list[tuple[str, float, float]]:
+    """ISO weeks (Monday 00:00 local) covering [first_day, last_day] in a display time zone.
+
+    Returns (week label, start UTC, end UTC). Only grouping depends on the zone;
+    no metric value does (spec 5.1, acceptance 10). DST weeks are 167 or 169 h long.
+    """
+    import datetime as dt
+    from zoneinfo import ZoneInfo
+
+    tz = ZoneInfo(tz_name)
+    d0, d1 = dt.date.fromisoformat(first_day), dt.date.fromisoformat(last_day)
+    if d1 < d0 or (d1 - d0).days > 3660:
+        raise ValueError("date range must be ordered and at most ten years")
+    monday = d0 - dt.timedelta(days=d0.weekday())
+    out = []
+    while monday <= d1:
+        nxt = monday + dt.timedelta(days=7)
+        start = dt.datetime.combine(monday, dt.time(), tz).timestamp()
+        end = dt.datetime.combine(nxt, dt.time(), tz).timestamp()
+        y, w, _ = monday.isocalendar()
+        out.append((f"{y}-W{w:02d}", start, end))
+        monday = nxt
+    return out
+
+
+def weekly(c: Connection, tz_name: str, first_day: str, last_day: str) -> list[dict]:
+    return [{"week": label, "start_utc": s, "end_utc": e, **{k: v for k, v in totals(c, s, e).items()
+                                                            if k != "range_utc"}}
+            for label, s, e in iso_weeks(tz_name, first_day, last_day)]
