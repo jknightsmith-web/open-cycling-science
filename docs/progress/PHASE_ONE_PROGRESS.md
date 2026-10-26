@@ -2,7 +2,7 @@
 
 Updated 2026-10-24. Specification v1.0 (frozen). Repository: https://github.com/jknightsmith-web/open-cycling-science (full history pushed 2026-10-24); CI green on Linux (run 40079281341).
 
-Test run 2026-10-24 after WP9, Linux container: backend `uv run --offline pytest` **186 passed, 0 failed** (WP8 had 135; WP9 adds 51: export and restore 24, deletion 14, interrupted operations 6, running server network 2, API 5); frontend `npm test` **15 passed, 0 failed**; end to end `npx playwright test` **16 passed, 0 failed** (WP8 had 11; WP9 adds 5); `make types-check` clean. Network access is blocked for the backend suite, the running server is audited for every socket call (below), and every end to end test aborts and fails on any request that is not to 127.0.0.1. Every test uses synthetic files; no real device compatibility is claimed (P10).
+Test run 2026-10-24 after WP9, Linux container: backend `uv run --offline pytest` **187 passed, 0 failed** (WP8 had 135; WP9 adds 52, including the migration 0004 test added 2026-10-26: export and restore 24, deletion 14, interrupted operations 6, running server network 2, API 5); frontend `npm test` **15 passed, 0 failed**; end to end `npx playwright test` **16 passed, 0 failed** (WP8 had 11; WP9 adds 5); `make types-check` clean. Network access is blocked for the backend suite, the running server is audited for every socket call (below), and every end to end test aborts and fails on any request that is not to 127.0.0.1. Every test uses synthetic files; no real device compatibility is claimed (P10).
 
 ## Work packages
 
@@ -80,7 +80,9 @@ Overview with 1,000 activities: median 284 ms, max 309 ms. Raw results: `fronten
 
 ## WP9 choices within the spec (need Jimmy's review)
 
-1. GPS positions are no longer stored. Spec 8.2 keeps positions out of the database; the WP4 importer still kept them in `original_field_json`. Migration 0004 strips them from existing rows and the importer drops any field named for position, latitude or longitude. Exported originals still contain GPS (the files are unchanged); Settings warns.
+Each choice is set against the specification text in [`WP9_DECISIONS.md`](WP9_DECISIONS.md). WP9 provisionally accepted 2026-10-26 subject to that review.
+
+1. GPS positions are no longer stored in the database. Spec 8.2 keeps location out of derived exports, which include the samples table; the WP4 importer kept positions in `original_field_json`. The vault originals are untouched (`tests/test_migration_0004.py`). Migration 0004 strips them from existing rows and the importer drops any field named for position, latitude or longitude. Exported originals still contain GPS (the files are unchanged); Settings warns.
 2. Exports are written to `exports/` in the data root (atomic, `.partial-` then rename) and listed in Settings for download. Deleting a recording also deletes every saved export that contains it, and the confirmation lists them.
 3. The JSON form of the derived export is JSON Lines, one file per table, beside the CSV.
 4. When a confirmed group falls below two members it dissolves: the ride, its runs and its selection history go, and the remaining recording counts on its own again. When it keeps two or more members, history rows keep their place with the activity id cleared and `source_deleted` set.
